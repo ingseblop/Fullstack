@@ -26,7 +26,7 @@ const App = () => {
   const [newName, setNewName] = useState(['',''])
   const [filter,setFilter] = useState('')
   const [added, setAdded] = useState(null)
-  const va = [... persons]
+  let va = [... persons]
   
   useEffect(() => {
     personService
@@ -52,7 +52,7 @@ const App = () => {
       const newPerson = {
           id: persons.length+1,
           name : newName[0],
-          phone: newName[1]
+          number: newName[1]
         }
 
 
@@ -86,12 +86,14 @@ const App = () => {
   }
 
   const ereaseHandler = id => {
-    const message= `Delete ${persons[id].name}?`
+    let name = persons.find(p => p.id === id)
+    const message= `Delete ${name.name}?`
     if(window.confirm(message)){
           personService
             .erease(id)
-            .then(returnedperson => {
-              setPersons(returnedperson.filter(n => n.id !== id))
+            .then(() => {
+              setPersons(persons.filter(n => n.id !== id))
+              window.alert(`Deleted`)
             })
           }
   }
@@ -109,10 +111,10 @@ const App = () => {
       <Notification message={added}/>
       <Filter filterHandler={filterHandler} />
       <h3>Add a new</h3>
-      <PersonForm addPerson={addPerson} nameHandler={nameHandler} phoneHandler={phoneHandler} newName={newName}/>
+      <PersonForm addPerson={addPerson} nameHandler={nameHandler} phoneHandler={phoneHandler} 
+      newName={newName}/>
       <h2>Numbers</h2>
-      {va.map(person => <Phonebook key={person.id} name={person.name} 
-                    phone={person.phone} handler={() => ereaseHandler(person.id)} />)}
+      {va.map(person => <Phonebook key={person.id} person={person} handler={ereaseHandler} />)}
       
       
     </div>
