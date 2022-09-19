@@ -1,15 +1,40 @@
 import { useState } from 'react'
+import {
+  Routes, Route, Link,
+  useMatch
+} from "react-router-dom"
+import {useField} from './hooks'
 
-const Menu = () => {
+const Anecdote = ({anecdote}) => {
+  return (
+    <div>
+      <h2>{anecdote.content} by {anecdote.author}</h2>
+      <div>
+        <p>has {anecdote.votes}</p>
+        <p>more info on {anecdote.info}</p>
+      </div>
+    </div>
+  )
+}
+
+const Menu = ({anecdotes,anecdote,addNew}) => {
   const padding = {
     paddingRight: 5
   }
   return (
     <div>
-      <a href='#' style={padding}>anecdotes</a>
-      <a href='#' style={padding}>create new</a>
-      <a href='#' style={padding}>about</a>
-    </div>
+      <div>
+        <Link style={padding} to="/">anecdotes</Link>
+        <Link style={padding} to="/createNew">create new</Link>
+        <Link style={padding} to="/about">about</Link>
+      </div>
+      <Routes>
+        <Route path='/:id' element={<Anecdote anecdote={anecdote} />}/>
+        <Route path='/' element={<AnecdoteList anecdotes={anecdotes} />}/>
+        <Route path='/createNew' element={<CreateNew addNew={addNew}/>}/>
+        <Route path='/about' element={<About />}/>
+      </Routes>
+    </div>   
   )
 }
 
@@ -17,7 +42,10 @@ const AnecdoteList = ({ anecdotes }) => (
   <div>
     <h2>Anecdotes</h2>
     <ul>
-      {anecdotes.map(anecdote => <li key={anecdote.id} >{anecdote.content}</li>)}
+      {anecdotes.map(anecdote => 
+      <li key={anecdote.id} >
+        <Link to={`/${anecdote.id}`}>{anecdote.content}</Link>
+      </li>)}
     </ul>
   </div>
 )
@@ -45,19 +73,27 @@ const Footer = () => (
 )
 
 const CreateNew = (props) => {
-  const [content, setContent] = useState('')
-  const [author, setAuthor] = useState('')
-  const [info, setInfo] = useState('')
+  const content = useField('text')
+  const author = useField('text')
+  const info = useField('url')
 
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    console.log('aqui hubo algo')
     props.addNew({
-      content,
-      author,
-      info,
+      content: content.value,
+      author: author.value,
+      info: info.value,
       votes: 0
     })
+  }
+
+  const handleReset = (e) => {
+    e.preventDefault()
+    content.reset()
+    author.reset()
+    info.reset()
   }
 
   return (
@@ -66,17 +102,18 @@ const CreateNew = (props) => {
       <form onSubmit={handleSubmit}>
         <div>
           content
-          <input name='content' value={content} onChange={(e) => setContent(e.target.value)} />
+          <input {...content} />
         </div>
         <div>
           author
-          <input name='author' value={author} onChange={(e) => setAuthor(e.target.value)} />
+          <input {...author} />
         </div>
         <div>
           url for more info
-          <input name='info' value={info} onChange={(e)=> setInfo(e.target.value)} />
+          <input {...info} />
         </div>
         <button>create</button>
+        <button onClick={handleReset}>reset</button>
       </form>
     </div>
   )
@@ -101,17 +138,26 @@ const App = () => {
     }
   ])
 
-  const [notification, setNotification] = useState('')
+  const [notification, setNotification] = useState(null)
 
   const addNew = (anecdote) => {
     anecdote.id = Math.round(Math.random() * 10000)
     setAnecdotes(anecdotes.concat(anecdote))
+    setNotification(`a new anecdote ${anecdote.content} created`)
+    setTimeout(()=> {setNotification(null)},50000)
   }
 
+  const Notification =() => (
+    <div>{notification}</div>
+  )
   const anecdoteById = (id) =>
-    anecdotes.find(a => a.id === id)
-
-  const vote = (id) => {
+   anecdotes.find(a => a.id === id)
+  
+  const match = useMatch('/:id')
+  const anecdote = match ? anecdoteById(Number(match.params.id)):
+    console.log(match)
+  console.log(anecdote)
+  /*const vote = (id) => {
     const anecdote = anecdoteById(id)
 
     const voted = {
@@ -120,15 +166,16 @@ const App = () => {
     }
 
     setAnecdotes(anecdotes.map(a => a.id === id ? voted : a))
-  }
+  }*/
 
   return (
     <div>
       <h1>Software anecdotes</h1>
-      <Menu />
-      <AnecdoteList anecdotes={anecdotes} />
-      <About />
-      <CreateNew addNew={addNew} />
+      {notification === null?
+        null:
+        <Notification/>
+      }
+      <Menu anecdotes={anecdotes} anecdote={anecdote} addNew={addNew}/>
       <Footer />
     </div>
   )
